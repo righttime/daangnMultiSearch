@@ -3,131 +3,810 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>다중 동네 검색</title>
+    <title>당근검색 — 다중 동네 검색</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=SUIT:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg: #FFFBF5;
+            --bg-secondary: #FFF7ED;
+            --card: #FFFFFF;
+            --carrot: #FF6F0F;
+            --carrot-dark: #E85A0A;
+            --carrot-light: #FFF0E6;
+            --carrot-glow: rgba(255, 111, 15, 0.15);
+            --text: #1A1A1A;
+            --text-secondary: #5A5A5A;
+            --text-muted: #9A9A9A;
+            --border: #F0EBE5;
+            --border-strong: #E5DFD7;
+            --success: #22C55E;
+            --danger: #EF4444;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+            --shadow-lg: 0 12px 40px rgba(0,0,0,0.1);
+            --shadow-carrot: 0 8px 32px rgba(255, 111, 15, 0.25);
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, 'Malgun Gothic', sans-serif; background: #f5f6f8; padding: 16px; }
-        .container { max-width: 900px; margin: 0 auto; }
-        h1 { text-align: center; margin: 16px 0; color: #ff6f0f; font-size: 24px; }
-        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 16px; }
-        .search-row { position: relative; }
-        .search-input { width: 100%; padding: 14px 16px; padding-right: 40px; border: 2px solid #ff6f0f; border-radius: 10px; font-size: 16px; outline: none; }
-        .search-input:focus { box-shadow: 0 0 0 3px rgba(255,111,15,0.2); }
-        .search-clear { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 18px; cursor: pointer; color: #999; display: none; }
-        
-        /* 검색 히스토리 드롭다운 */
-        .history-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #eee; border-radius: 0 0 10px 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 50; display: none; max-height: 300px; overflow-y: auto; }
+
+        body {
+            font-family: 'SUIT', 'Noto Sans KR', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background decoration */
+        .bg-decoration {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .bg-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+        }
+        .bg-blob-1 { width: 500px; height: 500px; background: #FFE4CC; top: -200px; right: -100px; }
+        .bg-blob-2 { width: 400px; height: 400px; background: #FFD4B8; bottom: -150px; left: -100px; }
+        .bg-blob-3 { width: 300px; height: 300px; background: #FFF0E6; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 32px 20px 80px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--carrot) 0%, #FF8F4A 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: var(--shadow-carrot);
+            transform: rotate(-5deg);
+            transition: transform 0.3s ease;
+        }
+        .logo-icon:hover { transform: rotate(0deg) scale(1.05); }
+        .logo h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--carrot) 0%, var(--carrot-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .tagline {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 16px;
+        }
+        .stat {
+            text-align: center;
+            padding: 8px 16px;
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+        .stat-value { font-size: 20px; font-weight: 700; color: var(--carrot); }
+        .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Search Card */
+        .search-card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            animation: fadeInUp 0.6s ease-out 0.1s backwards;
+        }
+
+        .search-wrapper {
+            position: relative;
+            margin-bottom: 24px;
+        }
+        .search-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .search-input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .search-input {
+            width: 100%;
+            padding: 18px 52px 18px 52px;
+            border: 2px solid var(--border-strong);
+            border-radius: 16px;
+            font-size: 17px;
+            font-family: inherit;
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .search-input::placeholder { color: var(--text-muted); }
+        .search-input:focus {
+            border-color: var(--carrot);
+            background: var(--card);
+            box-shadow: 0 0 0 4px var(--carrot-glow);
+        }
+        .search-icon {
+            position: absolute;
+            left: 18px;
+            font-size: 20px;
+            color: var(--carrot);
+            pointer-events: none;
+        }
+        .search-clear {
+            position: absolute;
+            right: 14px;
+            background: var(--bg-secondary);
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-muted);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .search-clear:hover { background: var(--carrot-light); color: var(--carrot); }
+
+        /* History dropdown */
+        .history-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0; right: 0;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            z-index: 100;
+            display: none;
+            overflow: hidden;
+            animation: dropdownIn 0.2s ease-out;
+        }
+        @keyframes dropdownIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         .history-dropdown.show { display: block; }
-        .history-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #f0f0f0; }
-        .history-header span { font-size: 12px; color: #888; }
-        .history-clear-btn { font-size: 11px; color: #ff6f0f; background: none; border: none; cursor: pointer; }
-        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f8f8f8; }
-        .history-item:hover { background: #fff8f0; }
-        .history-query { font-size: 14px; color: #333; }
-        .history-meta { font-size: 11px; color: #aaa; display: flex; gap: 8px; align-items: center; }
-        .history-badge { background: #fff3e0; color: #ff6f0f; padding: 1px 6px; border-radius: 8px; font-size: 10px; }
-        .history-empty { padding: 20px; text-align: center; color: #ccc; font-size: 13px; }
-        
-        /* 동네 선택 */
-        .region-section { margin-top: 16px; }
-        .region-label { font-weight: bold; margin-bottom: 8px; color: #333; display: flex; justify-content: space-between; align-items: center; }
-        .region-count { font-size: 13px; color: #888; font-weight: normal; }
-        .btn-row { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
-        .btn-sm { padding: 6px 12px; background: #f0f0f0; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
-        .btn-sm:hover { background: #e0e0e0; }
-        
-        .region-grid { display: flex; flex-wrap: wrap; gap: 5px; max-height: 200px; overflow-y: auto; padding: 4px; border: 1px solid #eee; border-radius: 8px; }
-        .region-tag { display: inline-flex; align-items: center; padding: 4px 8px; background: #fff3e0; border-radius: 16px; font-size: 12px; cursor: pointer; user-select: none; border: 2px solid transparent; }
-        .region-tag.selected { background: #ff6f0f; color: white; border-color: #e5620d; }
-        .region-tag:hover { border-color: #ff6f0f; }
-        
-        /* 검색 */
-        .search-btn { width: 100%; padding: 16px; background: #ff6f0f; color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 12px; }
-        .search-btn:hover { background: #e5620d; }
-        .search-btn:disabled { background: #ccc; cursor: not-allowed; }
-        
-        /* 진행 상태 */
-        .progress-bar { height: 4px; background: #eee; border-radius: 2px; margin: 12px 0; display: none; }
-        .progress-fill { height: 100%; background: #ff6f0f; border-radius: 2px; transition: width 0.3s; width: 0%; }
-        .progress-text { text-align: center; color: #888; font-size: 14px; margin-bottom: 8px; display: none; }
-        .progress-text .found { color: #ff6f0f; font-weight: bold; }
-        
-        /* 결과 */
-        .result-group { margin-bottom: 10px; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .group-header { background: #ff6f0f; color: white; padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
-        .group-count { background: rgba(255,255,255,0.3); padding: 1px 8px; border-radius: 10px; font-size: 12px; }
-        .item-list { background: white; }
-        .item-card { display: flex; gap: 10px; padding: 10px; border-bottom: 1px solid #f0f0f0; }
-        .item-card:last-child { border-bottom: none; }
-        .item-card img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #f5f5f5; }
-        .item-info { flex: 1; min-width: 0; }
-        .item-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .item-price { color: #ff6f0f; font-weight: bold; font-size: 15px; }
-        .item-link { color: #999; font-size: 11px; text-decoration: none; }
-        .item-link:hover { color: #ff6f0f; }
-        .no-img { width: 80px; height: 80px; background: #f5f5f5; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; display: none; z-index: 100; }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .history-header span {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .history-clear-btn {
+            font-size: 12px;
+            color: var(--carrot);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .history-clear-btn:hover { background: var(--carrot-light); }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid var(--border);
+        }
+        .history-item:last-child { border-bottom: none; }
+        .history-item:hover { background: var(--bg-secondary); }
+        .history-query { font-size: 15px; font-weight: 500; color: var(--text); }
+        .history-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .history-badge {
+            background: var(--carrot-light);
+            color: var(--carrot);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 11px;
+        }
+        .history-empty {
+            padding: 32px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Region Selection */
+        .region-section { margin-top: 8px; }
+        .region-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .region-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .region-count {
+            font-size: 13px;
+            color: var(--carrot);
+            font-weight: 600;
+        }
+        .quick-btns {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .quick-btn {
+            padding: 8px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border-strong);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .quick-btn:hover {
+            background: var(--carrot-light);
+            border-color: var(--carrot);
+            color: var(--carrot);
+        }
+        .quick-btn.active {
+            background: var(--carrot);
+            border-color: var(--carrot);
+            color: white;
+        }
+
+        .region-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .region-grid::-webkit-scrollbar { width: 6px; }
+        .region-grid::-webkit-scrollbar-track { background: transparent; }
+        .region-grid::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+        .region-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            background: var(--card);
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            user-select: none;
+            border: 1.5px solid var(--border);
+            transition: all 0.2s;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .region-tag:hover {
+            border-color: var(--carrot);
+            color: var(--carrot);
+            transform: translateY(-1px);
+        }
+        .region-tag.selected {
+            background: var(--carrot);
+            border-color: var(--carrot);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 111, 15, 0.3);
+        }
+
+        /* Search Button */
+        .search-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--carrot) 0%, #FF8F4A 100%);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 24px;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(255, 111, 15, 0.35);
+            position: relative;
+            overflow: hidden;
+        }
+        .search-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        .search-btn:hover::before { left: 100%; }
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255, 111, 15, 0.45);
+        }
+        .search-btn:active { transform: translateY(0); }
+        .search-btn:disabled {
+            background: #E5E5E5;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .search-btn .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .stop-btn {
+            background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
+        }
+        .stop-btn:hover {
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.45);
+        }
+
+        /* Progress */
+        .progress-wrap {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            display: none;
+            animation: fadeInUp 0.3s ease-out;
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .progress-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .progress-stats {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .progress-stats .found { color: var(--carrot); font-weight: 700; }
+        .progress-track {
+            height: 8px;
+            background: var(--bg);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--carrot) 0%, #FF8F4A 100%);
+            border-radius: 4px;
+            transition: width 0.4s ease;
+            position: relative;
+        }
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(100%); }
+        }
+
+        /* Results */
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+        .results-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .results-count {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .results-count span { color: var(--carrot); font-weight: 700; }
+
+        .result-group {
+            margin-bottom: 20px;
+            border-radius: 20px;
+            overflow: hidden;
+            background: var(--card);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            animation: fadeInUp 0.4s ease-out backwards;
+        }
+        .result-group:nth-child(1) { animation-delay: 0.05s; }
+        .result-group:nth-child(2) { animation-delay: 0.1s; }
+        .result-group:nth-child(3) { animation-delay: 0.15s; }
+        .result-group:nth-child(4) { animation-delay: 0.2s; }
+        .result-group:nth-child(5) { animation-delay: 0.25s; }
+
+        .group-header {
+            background: linear-gradient(135deg, var(--carrot) 0%, #FF8F4A 100%);
+            color: white;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        .group-name { display: flex; align-items: center; gap: 8px; }
+        .group-name .pin { font-size: 16px; }
+        .group-count-badge {
+            background: rgba(255,255,255,0.25);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .group-items { padding: 8px; }
+
+        .item-card {
+            display: flex;
+            gap: 14px;
+            padding: 12px;
+            border-radius: 14px;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+            animation: fadeSlideIn 0.35s ease-out backwards;
+        }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .item-card:hover {
+            background: var(--bg);
+            transform: translateX(4px);
+        }
+        .item-img-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+        .item-img {
+            width: 88px;
+            height: 88px;
+            object-fit: cover;
+            border-radius: 12px;
+            background: var(--bg);
+        }
+        .item-no-img {
+            width: 88px;
+            height: 88px;
+            background: var(--bg);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+        .item-content { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+        .item-name {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text);
+        }
+        .item-price {
+            color: var(--carrot);
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+        .item-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .item-region-tag {
+            font-size: 11px;
+            background: var(--carrot-light);
+            color: var(--carrot);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        .item-time {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .item-link-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+            transition: color 0.2s;
+        }
+        .item-card:hover .item-link-hint { color: var(--carrot); }
+
+        /* Empty/Error states */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            animation: fadeInUp 0.4s ease-out;
+        }
+        .empty-icon { font-size: 64px; margin-bottom: 16px; }
+        .empty-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+        .empty-desc { font-size: 14px; color: var(--text-muted); }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-lg);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.error { background: var(--danger); }
+
+        /* Live dot */
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #22C55E;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        /* Keyboard hint */
+        .keyboard-hint {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            z-index: 50;
+        }
+        .key {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: monospace;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
+
+<div class="bg-decoration">
+    <div class="bg-blob bg-blob-1"></div>
+    <div class="bg-blob bg-blob-2"></div>
+    <div class="bg-blob bg-blob-3"></div>
+</div>
+
 <div class="container">
-    <h1>다중 동네 검색</h1>
-    
-    <div class="card">
-        <div class="search-row">
-            <input type="text" id="query" class="search-input" placeholder="검색어 입력 (예: 노트북, 맥북, 아이패드...)" autocomplete="off">
-            <button class="search-clear" id="clearBtn" onclick="clearQuery()">✕</button>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🥕</div>
+            <h1>당근검색</h1>
+        </div>
+        <p class="tagline">여러 동네를 한번에 검색해서 숨겨진 보물을 찾아보세요</p>
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-value" id="totalRegions">—</div>
+                <div class="stat-label">동네</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalHistory">—</div>
+                <div class="stat-label">검색기록</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search Card -->
+    <div class="search-card">
+        <div class="search-wrapper">
+            <div class="search-label">검색어</div>
+            <div class="search-input-wrap">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="query" class="search-input" placeholder="노트북, 맥북, 자전거, 에어팟..." autocomplete="off">
+                <button class="search-clear" id="clearBtn" onclick="clearQuery()">✕</button>
+            </div>
             <div class="history-dropdown" id="historyDropdown"></div>
         </div>
-        
+
         <div class="region-section">
-            <div class="region-label">
-                <span>📍 동네 선택</span>
+            <div class="region-header">
+                <div class="region-label">📍 동네 선택</div>
                 <span class="region-count" id="regionCount">0개 선택</span>
             </div>
-            <div class="btn-row">
-                <button class="btn-sm" onclick="selectAll()">전체선택</button>
-                <button class="btn-sm" onclick="deselectAll()">전체해제</button>
-                <button class="btn-sm" onclick="selectGroup('안산')">안산</button>
-                <button class="btn-sm" onclick="selectGroup('구로')">구로/금천</button>
-                <button class="btn-sm" onclick="selectGroup('안양')">안양/군포</button>
-                <button class="btn-sm" onclick="selectGroup('수원')">수원</button>
-                <button class="btn-sm" onclick="selectGroup('화성')">화성</button>
+            <div class="quick-btns">
+                <button class="quick-btn" onclick="selectAll()">전체선택</button>
+                <button class="quick-btn" onclick="deselectAll()">전체해제</button>
+                <button class="quick-btn" onclick="selectGroup('안산')">안산</button>
+                <button class="quick-btn" onclick="selectGroup('구로')">구로/금천</button>
+                <button class="quick-btn" onclick="selectGroup('안양')">안양/군포</button>
+                <button class="quick-btn" onclick="selectGroup('수원')">수원</button>
+                <button class="quick-btn" onclick="selectGroup('화성')">화성</button>
             </div>
             <div class="region-grid" id="regionGrid"></div>
         </div>
-        
-        <button class="search-btn" id="searchBtn" onclick="search()">🔍 선택한 동네에서 검색</button>
+
+        <button class="search-btn" id="searchBtn" onclick="search()">
+            <span>🔍</span>
+            <span id="searchBtnText">선택한 동네에서 검색</span>
+        </button>
     </div>
-    
-    <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
-    <div class="progress-text" id="progressText"></div>
+
+    <!-- Progress -->
+    <div class="progress-wrap" id="progressWrap">
+        <div class="progress-header">
+            <div class="progress-title">
+                <span class="live-dot"></span>
+                <span style="margin-left:8px" id="progressTitle">검색 중...</span>
+            </div>
+            <div class="progress-stats">
+                <span id="progressStats"></span>
+            </div>
+        </div>
+        <div class="progress-track">
+            <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+    </div>
+
+    <!-- Results -->
     <div id="results"></div>
 </div>
+
+<!-- Toast -->
 <div class="toast" id="toast"></div>
+
+<!-- Keyboard hints -->
+<div class="keyboard-hint">
+    <span class="key">Enter</span> 검색
+    <span class="key">Esc</span> 중지
+</div>
 
 <script>
 let regions = {};
 let selectedRegions = new Set();
 let searching = false;
 let historyData = [];
+let evtSource = null;
+let currentQuery = '';
+let allItems = [];
+
+function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return '방금 전';
+    if (mins < 60) return `${mins}분 전`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}시간 전`;
+    const days = Math.floor(hrs / 24);
+    if (days < 30) return `${days}일 전`;
+    return `${Math.floor(days / 30)}달 전`;
+}
 
 async function loadRegions() {
     try {
         const resp = await fetch('/regions.json');
         regions = await resp.json();
         renderRegions();
-    } catch(e) {
-        console.error('동네 로드 실패', e);
-    }
+        document.getElementById('totalRegions').textContent = Object.keys(regions).length;
+    } catch(e) { console.error('동네 로드 실패', e); }
 }
 
 async function loadHistory() {
     try {
         const resp = await fetch('/history');
         historyData = await resp.json();
+        document.getElementById('totalHistory').textContent = historyData.length;
     } catch(e) { historyData = []; }
 }
 
@@ -157,6 +836,7 @@ function selectGroup(keyword) {
         if (name.includes(keyword)) selectedRegions.add(id);
     });
     renderRegions();
+    toast(`${keyword} 지역 전체 선택`);
 }
 
 function clearQuery() {
@@ -165,15 +845,14 @@ function clearQuery() {
     hideHistory();
 }
 
-// 히스토리 드롭다운
 function showHistory() {
     const dropdown = document.getElementById('historyDropdown');
     if (historyData.length === 0) {
         dropdown.innerHTML = '<div class="history-empty">검색 기록이 없습니다</div>';
     } else {
-        let html = '<div class="history-header"><span>최근 검색</span><button class="history-clear-btn" onclick="clearHistory()">전체 삭제</button></div>';
+        let html = '<div class="history-header"><span>최근 검색</span><button class="history-clear-btn" onclick="clearHistory(event)">전체 삭제</button></div>';
         for (const h of historyData.slice(0, 20)) {
-            const date = h.last_searched ? h.last_searched.slice(5, 16).replace('T', ' ') : '';
+            const date = h.last_searched ? new Date(h.last_searched).toLocaleDateString('ko-KR', {month:'short',day:'numeric'}) : '';
             html += `<div class="history-item" onclick="useHistory('${h.query.replace(/'/g, "\\'")}')">
                 <span class="history-query">${h.query}</span>
                 <span class="history-meta">
@@ -188,29 +867,28 @@ function showHistory() {
     dropdown.classList.add('show');
 }
 
-function hideHistory() {
-    document.getElementById('historyDropdown').classList.remove('show');
-}
+function hideHistory() { document.getElementById('historyDropdown').classList.remove('show'); }
 
 function useHistory(query) {
     document.getElementById('query').value = query;
+    document.getElementById('clearBtn').style.display = 'block';
     hideHistory();
     search();
 }
 
-async function clearHistory() {
+async function clearHistory(e) {
+    if (e) e.stopPropagation();
     await fetch('/history', { method: 'DELETE' });
     historyData = [];
     showHistory();
     toast('검색 기록 삭제됨');
 }
 
-// 입력 이벤트
+// Input events
 const queryInput = document.getElementById('query');
 queryInput.addEventListener('focus', () => { showHistory(); });
 queryInput.addEventListener('input', () => {
     document.getElementById('clearBtn').style.display = queryInput.value ? 'block' : 'none';
-    // 필터링
     const val = queryInput.value.trim().toLowerCase();
     if (!val) { showHistory(); return; }
     const filtered = historyData.filter(h => h.query.toLowerCase().includes(val));
@@ -228,10 +906,13 @@ queryInput.addEventListener('input', () => {
 });
 
 document.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-row')) hideHistory();
+    if (!e.target.closest('.search-wrapper')) hideHistory();
 });
 
-queryInput.addEventListener('keydown', e => { if (e.key === 'Enter') { hideHistory(); search(); } });
+queryInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { hideHistory(); search(); }
+    if (e.key === 'Escape') { stopSearch(); }
+});
 
 async function search() {
     if (searching) return;
@@ -239,108 +920,166 @@ async function search() {
     const regionList = [...selectedRegions];
     if (!query) { toast('검색어를 입력하세요'); return; }
     if (regionList.length === 0) { toast('동네를 선택하세요'); return; }
-    
+    if (Object.keys(regions).length === 0) { toast('동네 정보를 불러오는 중입니다'); return; }
+
     hideHistory();
     searching = true;
-    document.getElementById('searchBtn').disabled = true;
-    document.getElementById('searchBtn').textContent = '🔍 검색 중...';
+    currentQuery = query;
+    allItems = [];
+
+    const searchBtn = document.getElementById('searchBtn');
+    searchBtn.disabled = true;
+    searchBtn.innerHTML = '<div class="spinner"></div><span>검색 중...</span>';
+    searchBtn.classList.add('stop-btn');
+    searchBtn.onclick = stopSearch;
+
+    document.getElementById('progressWrap').style.display = 'block';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('progressTitle').textContent = '검색 중...';
     document.getElementById('results').innerHTML = '';
-    document.getElementById('progressBar').style.display = 'block';
-    document.getElementById('progressText').style.display = 'block';
-    
+
     const total = regionList.length;
     let done = 0;
     let found = 0;
-    
+
     const allKeys = Object.keys(regions);
     const indices = regionList.map(id => allKeys.indexOf(id)).filter(i => i >= 0);
-    
-    const allItems = [];
-    
-    function timeSince(dateStr) {
-        if (!dateStr) return '';
-        const diff = Date.now() - new Date(dateStr).getTime();
-        const mins = Math.floor(diff / 60000);
-        if (mins < 1) return '방금';
-        if (mins < 60) return mins + '분 전';
-        const hrs = Math.floor(mins / 60);
-        if (hrs < 24) return hrs + '시간 전';
-        const days = Math.floor(hrs / 24);
-        if (days < 30) return days + '일 전';
-        const months = Math.floor(days / 30);
-        return months + '달 전';
-    }
-    
-    const evtSource = new EventSource(`/search/stream?query=${encodeURIComponent(query)}&idx=${indices.join(',')}`);
-    
+
+    const sseUrl = `/search/stream?query=${encodeURIComponent(query)}&idx=${indices.join(',')}`;
+    evtSource = new EventSource(sseUrl);
+
     evtSource.onmessage = function(event) {
-        const msg = JSON.parse(event.data);
-        
+        let msg;
+        try { msg = JSON.parse(event.data); } catch(e) { return; }
+
         if (msg.type === 'result') {
             done++;
             const r = msg.data;
             if (!r) return;
             const prog = msg.progress;
             found = prog ? prog.found : found;
-            
+
             const pct = Math.round((done / total) * 100);
             document.getElementById('progressFill').style.width = pct + '%';
-            document.getElementById('progressText').innerHTML = 
-                `검색 중... <b>${done}</b>/${total} 동네 완료 · <span class="found">${found}개</span> 발견 (${pct}%)`;
-            
+            document.getElementById('progressStats').innerHTML =
+                `<b>${done}</b>/${total} 동네 · <span class="found">${found}개</span> 발견`;
+            document.getElementById('progressTitle').textContent = '검색 중...';
+
             if (r.items && r.items.length > 0) {
                 for (const item of r.items) {
                     allItems.push({...item, region: r.region});
                 }
                 allItems.sort((a, b) => (b.posted_at || '').localeCompare(a.posted_at || ''));
-                const container = document.getElementById('results');
-                container.innerHTML = '';
-                for (const item of allItems) {
-                    const price = item.price ? Number(item.price).toLocaleString() + '원' : '가격문의';
-                    const img = item.image 
-                        ? `<img src="${item.image}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="no-img" style="display:none">📷</div>`
-                        : `<div class="no-img">📷</div>`;
-                    const regionTag = `<span style="font-size:11px;color:#ff6f0f;background:#fff3e0;padding:2px 6px;border-radius:8px;">📍${item.region}</span>`;
-                    const timeTag = item.posted_at ? `<span style="font-size:11px;color:#999;">${timeSince(item.posted_at)}</span>` : '';
-                    container.insertAdjacentHTML('beforeend',
-                        `<div class="item-card" style="border-bottom:1px solid #f0f0f0;padding:10px;">${img}<div class="item-info">
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-price">${price} ${regionTag} ${timeTag}</div>
-                        ${item.url ? `<a class="item-link" href="${item.url}" target="_blank">당근에서 보기 →</a>` : ''}
-                    </div></div>`);
-                }
+                renderResults(allItems);
             }
         }
-        
+
         if (msg.type === 'done') {
             evtSource.close();
+            evtSource = null;
             searching = false;
-            document.getElementById('searchBtn').disabled = false;
-            document.getElementById('searchBtn').textContent = '🔍 선택한 동네에서 검색';
-            document.getElementById('progressText').innerHTML = 
-                `완료! <b>${total}</b>개 동네 검색 · <span class="found">${msg.total}개</span> 발견`;
+            searchBtn.disabled = false;
+            searchBtn.innerHTML = '<span>🔍</span><span id="searchBtnText">선택한 동네에서 검색</span>';
+            searchBtn.classList.remove('stop-btn');
+            searchBtn.onclick = search;
+            document.getElementById('progressTitle').textContent = '검색 완료!';
+            document.getElementById('progressStats').innerHTML =
+                `<b>${total}</b>개 동네 · <span class="found">${msg.total}개</span> 발견`;
+            document.getElementById('progressFill').style.width = '100%';
+            renderResults(allItems, true);
             setTimeout(() => {
-                document.getElementById('progressBar').style.display = 'none';
-            }, 2000);
-            // 히스토리 새로고침
+                document.getElementById('progressWrap').style.display = 'none';
+            }, 3000);
             loadHistory();
         }
     };
-    
+
     evtSource.onerror = function() {
-        evtSource.close();
+        if (evtSource) {
+            evtSource.close();
+            evtSource = null;
+        }
         searching = false;
-        document.getElementById('searchBtn').disabled = false;
-        document.getElementById('searchBtn').textContent = '🔍 선택한 동네에서 검색';
-        toast('검색 오류 발생');
+        searchBtn.disabled = false;
+        searchBtn.innerHTML = '<span>🔍</span><span id="searchBtnText">선택한 동네에서 검색</span>';
+        searchBtn.classList.remove('stop-btn');
+        searchBtn.onclick = search;
+        toast('검색 중 오류가 발생했습니다', true);
     };
 }
 
-function toast(msg) {
+function stopSearch() {
+    if (evtSource) {
+        evtSource.close();
+        evtSource = null;
+    }
+    searching = false;
+    const searchBtn = document.getElementById('searchBtn');
+    searchBtn.disabled = false;
+    searchBtn.innerHTML = '<span>🔍</span><span id="searchBtnText">선택한 동네에서 검색</span>';
+    searchBtn.classList.remove('stop-btn');
+    searchBtn.onclick = search;
+    document.getElementById('progressTitle').textContent = '검색 중지됨';
+    document.getElementById('progressStats').innerHTML = `중단 시점까지 <span class="found">${allItems.length}개</span> 발견`;
+    toast('검색이 중지되었습니다');
+}
+
+function renderResults(items, isFinal = false) {
+    if (items.length === 0) {
+        document.getElementById('results').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <div class="empty-title">검색 결과 없음</div>
+                <div class="empty-desc">다른 검색어나 다른 동네를 선택해 보세요</div>
+            </div>`;
+        return;
+    }
+
+    // Sort all items by posted date (newest first) - flat list, no grouping
+    const sortedItems = [...items].sort((a, b) => (b.posted_at || '').localeCompare(a.posted_at || ''));
+
+    const resultsEl = document.getElementById('results');
+    resultsEl.innerHTML = `
+        <div class="results-header">
+            <div class="results-title">검색 결과</div>
+            <div class="results-count">총 <span>${items.length}</span>개</div>
+        </div>
+        <div id="itemsList"></div>
+    `;
+
+    const listEl = resultsEl.querySelector('#itemsList');
+    let animDelay = 0;
+    for (const item of sortedItems) {
+        const price = item.price ? Number(item.price).toLocaleString('ko-KR') + '원' : '가격문의';
+        const imgHtml = item.image
+            ? `<img class="item-img" src="${item.image}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="item-no-img" style="display:none">📷</div>`
+            : `<div class="item-no-img">📷</div>`;
+        const timeTag = item.posted_at ? `<span class="item-time">${timeAgo(item.posted_at)}</span>` : '';
+        const regionTag = item.region ? `<span class="item-region-tag">📍${item.region}</span>` : '';
+        const delay = Math.min(animDelay * 30, 600); // cap at 600ms
+        listEl.insertAdjacentHTML('beforeend',
+            `<a class="item-card" href="${item.url || '#'}" target="_blank" rel="noopener" style="animation-delay:${delay}ms">
+                <div class="item-img-wrap">${imgHtml}</div>
+                <div class="item-content">
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-price">${price}</div>
+                    <div class="item-meta">
+                        ${regionTag}
+                        ${timeTag}
+                    </div>
+                    <div class="item-link-hint">당근에서 보기 →</div>
+                </div>
+            </a>`);
+        animDelay++;
+    }
+}
+
+function toast(msg, isError = false) {
     const t = document.getElementById('toast');
     t.textContent = msg;
-    t.style.display = 'block';
-    setTimeout(() => t.style.display = 'none', 3000);
+    t.className = 'toast' + (isError ? ' error' : '');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
 }
 
 loadRegions();
