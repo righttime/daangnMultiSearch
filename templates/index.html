@@ -536,7 +536,7 @@
             gap: 14px;
             padding: 12px;
             border-radius: 14px;
-            transition: all 0.2s;
+            transition: transform 0.3s ease, opacity 0.3s ease;
             text-decoration: none;
             color: inherit;
             animation: fadeSlideIn 0.35s ease-out backwards;
@@ -1027,32 +1027,54 @@ function updateItemCount() {
     if (cnt) cnt.textContent = allItems.length + '개';
 }
 
+function insertSorted(listEl, newItem, delay) {
+    const posted = newItem.posted_at || '';
+    const cards = listEl.querySelectorAll('.item-card');
+    let inserted = false;
+    for (const card of cards) {
+        const cardPosted = card.dataset.posted || '';
+        if (posted > cardPosted) {
+            listEl.insertBefore(makeItemCard(newItem, delay), card);
+            inserted = true;
+            break;
+        }
+    }
+    if (!inserted) {
+        listEl.appendChild(makeItemCard(newItem, delay));
+    }
+}
+
+function makeItemCard(item, delay) {
+    const price = item.price ? Number(item.price).toLocaleString('ko-KR') + '원' : '가격문의';
+    const imgHtml = item.image
+        ? `<img class="item-img" src="${item.image}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="item-no-img" style="display:none">📷</div>`
+        : `<div class="item-no-img">📷</div>`;
+    const timeTag = item.posted_at ? `<span class="item-time">${timeAgo(item.posted_at)}</span>` : '';
+    const regionTag = item.region ? `<span class="item-region-tag">📍${item.region}</span>` : '';
+    const el = document.createElement('a');
+    el.className = 'item-card';
+    el.href = item.url || '#';
+    el.target = '_blank';
+    el.rel = 'noopener';
+    el.style.animationDelay = delay + 'ms';
+    el.dataset.posted = item.posted_at || '';
+    el.innerHTML = `
+        <div class="item-img-wrap">${imgHtml}</div>
+        <div class="item-content">
+            <div class="item-name">${item.name}</div>
+            <div class="item-price">${price}</div>
+            <div class="item-meta">${regionTag}${timeTag}</div>
+            <div class="item-link-hint">당근에서 보기 →</div>
+        </div>`;
+    return el;
+}
+
 function appendResults(newItems, region) {
     const listEl = getOrCreateItemsList();
     let animDelay = 0;
     for (const item of newItems) {
-        const price = item.price ? Number(item.price).toLocaleString('ko-KR') + '원' : '가격문의';
-        const imgHtml = item.image
-            ? `<img class="item-img" src="${item.image}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="item-no-img" style="display:none">📷</div>`
-            : `<div class="item-no-img">📷</div>`;
-        const timeTag = item.posted_at ? `<span class="item-time">${timeAgo(item.posted_at)}</span>` : '';
-        const regionTag = item.region ? `<span class="item-region-tag">📍${item.region}</span>` : '';
         const delay = Math.min(animDelay * 40, 500);
-        const el = document.createElement('a');
-        el.className = 'item-card';
-        el.href = item.url || '#';
-        el.target = '_blank';
-        el.rel = 'noopener';
-        el.style.animationDelay = delay + 'ms';
-        el.innerHTML = `
-            <div class="item-img-wrap">${imgHtml}</div>
-            <div class="item-content">
-                <div class="item-name">${item.name}</div>
-                <div class="item-price">${price}</div>
-                <div class="item-meta">${regionTag}${timeTag}</div>
-                <div class="item-link-hint">당근에서 보기 →</div>
-            </div>`;
-        listEl.appendChild(el);
+        insertSorted(listEl, {...item, region}, delay);
         animDelay++;
     }
     updateItemCount();
