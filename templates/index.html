@@ -969,8 +969,7 @@ async function search() {
                 for (const item of r.items) {
                     allItems.push({...item, region: r.region});
                 }
-                allItems.sort((a, b) => (b.posted_at || '').localeCompare(a.posted_at || ''));
-                renderResults(allItems);
+                appendResults(r.items, r.region);
             }
         }
 
@@ -986,7 +985,7 @@ async function search() {
             document.getElementById('progressStats').innerHTML =
                 `<b>${total}</b>개 동네 · <span class="found">${msg.total}개</span> 발견`;
             document.getElementById('progressFill').style.width = '100%';
-            renderResults(allItems, true);
+            updateItemCount();
             setTimeout(() => {
                 document.getElementById('progressWrap').style.display = 'none';
             }, 3000);
@@ -1006,6 +1005,57 @@ async function search() {
         searchBtn.onclick = search;
         toast('검색 중 오류가 발생했습니다', true);
     };
+}
+
+function getOrCreateItemsList() {
+    let listEl = document.querySelector('#itemsList');
+    if (!listEl) {
+        const resultsEl = document.getElementById('results');
+        resultsEl.innerHTML = `
+            <div class="results-header">
+                <div class="results-title">검색 결과</div>
+                <div class="results-count" id="itemCount">0개</div>
+            </div>
+            <div id="itemsList"></div>`;
+        listEl = document.querySelector('#itemsList');
+    }
+    return listEl;
+}
+
+function updateItemCount() {
+    const cnt = document.querySelector('#itemCount');
+    if (cnt) cnt.textContent = allItems.length + '개';
+}
+
+function appendResults(newItems, region) {
+    const listEl = getOrCreateItemsList();
+    let animDelay = 0;
+    for (const item of newItems) {
+        const price = item.price ? Number(item.price).toLocaleString('ko-KR') + '원' : '가격문의';
+        const imgHtml = item.image
+            ? `<img class="item-img" src="${item.image}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="item-no-img" style="display:none">📷</div>`
+            : `<div class="item-no-img">📷</div>`;
+        const timeTag = item.posted_at ? `<span class="item-time">${timeAgo(item.posted_at)}</span>` : '';
+        const regionTag = item.region ? `<span class="item-region-tag">📍${item.region}</span>` : '';
+        const delay = Math.min(animDelay * 40, 500);
+        const el = document.createElement('a');
+        el.className = 'item-card';
+        el.href = item.url || '#';
+        el.target = '_blank';
+        el.rel = 'noopener';
+        el.style.animationDelay = delay + 'ms';
+        el.innerHTML = `
+            <div class="item-img-wrap">${imgHtml}</div>
+            <div class="item-content">
+                <div class="item-name">${item.name}</div>
+                <div class="item-price">${price}</div>
+                <div class="item-meta">${regionTag}${timeTag}</div>
+                <div class="item-link-hint">당근에서 보기 →</div>
+            </div>`;
+        listEl.appendChild(el);
+        animDelay++;
+    }
+    updateItemCount();
 }
 
 function stopSearch() {
