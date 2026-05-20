@@ -15,7 +15,20 @@ app = FastAPI(title="당근마켓 다중 동네 검색")
 templates = Jinja2Templates(directory="templates")
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Cache-Control": "no-cache",
+    "Sec-Ch-Ua": '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": '"Windows"',
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+    "Referer": "https://www.daangn.com/",
 }
 
 HISTORY_FILE = os.environ.get("HISTORY_FILE", "/app/data/history.json")
@@ -66,7 +79,7 @@ def add_history(query: str, region_count: int, found: int):
 def fetch_page(url: str, max_retries: int = 3) -> str:
     for attempt in range(max_retries):
         resp = http_requests.get(url, headers=HEADERS, timeout=10)
-        if resp.status_code == 429:
+        if resp.status_code in (429, 403):
             wait = 2 * (attempt + 1)  # 2s, 4s, 6s
             time.sleep(wait)
             continue
