@@ -1,3 +1,4 @@
+__version__ = "1.1.0"
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
