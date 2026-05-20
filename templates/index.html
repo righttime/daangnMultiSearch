@@ -1028,7 +1028,7 @@ function updateItemCount() {
 }
 
 function insertSorted(listEl, newItem, delay) {
-    const posted = newItem.posted_at || '';
+    const posted = newItem.posted || newItem.posted_at || '';
     const cards = listEl.querySelectorAll('.item-card');
     let inserted = false;
     for (const card of cards) {
@@ -1049,7 +1049,8 @@ function makeItemCard(item, delay) {
     const imgHtml = item.image
         ? `<img class="item-img" src="${item.image}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="item-no-img" style="display:none">📷</div>`
         : `<div class="item-no-img">📷</div>`;
-    const timeTag = item.posted_at ? `<span class="item-time">${timeAgo(item.posted_at)}</span>` : '';
+    const postedAt = item.posted || item.posted_at || '';
+    const timeTag = postedAt ? `<span class="item-time">${timeAgo(postedAt)}</span>` : '';
     const regionTag = item.region ? `<span class="item-region-tag">📍${item.region}</span>` : '';
     const el = document.createElement('a');
     el.className = 'item-card';
@@ -1057,7 +1058,7 @@ function makeItemCard(item, delay) {
     el.target = '_blank';
     el.rel = 'noopener';
     el.style.animationDelay = delay + 'ms';
-    el.dataset.posted = item.posted_at || '';
+    el.dataset.posted = postedAt;
     el.innerHTML = `
         <div class="item-img-wrap">${imgHtml}</div>
         <div class="item-content">
@@ -1108,7 +1109,7 @@ function renderResults(items, isFinal = false) {
     }
 
     // Sort all items by posted date (newest first) - flat list, no grouping
-    const sortedItems = [...items].sort((a, b) => (b.posted_at || '').localeCompare(a.posted_at || ''));
+    const sortedItems = [...items].sort((a, b) => ((b.posted || b.posted_at) || '').localeCompare((a.posted || a.posted_at) || ''));
 
     const resultsEl = document.getElementById('results');
     resultsEl.innerHTML = `
@@ -1126,7 +1127,8 @@ function renderResults(items, isFinal = false) {
         const imgHtml = item.image
             ? `<img class="item-img" src="${item.image}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="item-no-img" style="display:none">📷</div>`
             : `<div class="item-no-img">📷</div>`;
-        const timeTag = item.posted_at ? `<span class="item-time">${timeAgo(item.posted_at)}</span>` : '';
+        const postedAt = item.posted || item.posted_at || '';
+        const timeTag = postedAt ? `<span class="item-time">${timeAgo(postedAt)}</span>` : '';
         const regionTag = item.region ? `<span class="item-region-tag">📍${item.region}</span>` : '';
         const delay = Math.min(animDelay * 30, 600); // cap at 600ms
         listEl.insertAdjacentHTML('beforeend',
