@@ -195,7 +195,7 @@ async def search_stream(query: str = Query(...), idx: str = Query(default=""), r
                 done += 1
                 data = json.dumps({"type": "error", "region_id": rid, "error": str(e)}, ensure_ascii=False)
                 yield f"data: {data}\n\n"
-            time.sleep(0.1)
+            time.sleep(0.2)
         # 히스토리 저장
         add_history(query, total_regions, total_items)
         data = json.dumps({"type": "done", "total": total_items}, ensure_ascii=False)
