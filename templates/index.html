@@ -928,8 +928,7 @@ async function search() {
     allItems = [];
 
     const searchBtn = document.getElementById('searchBtn');
-    searchBtn.disabled = true;
-    searchBtn.innerHTML = '<div class="spinner"></div><span>검색 중...</span>';
+    searchBtn.innerHTML = '<div class="spinner"></div><span>검색 중지</span>';
     searchBtn.classList.add('stop-btn');
     searchBtn.onclick = stopSearch;
 
