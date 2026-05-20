@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    container_name: daangn-search
+    restart: unless-stopped
+    ports:
+      - "9095:9095"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - HISTORY_FILE=/app/data/history.json

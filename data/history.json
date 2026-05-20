@@ -1,0 +1,37 @@
+[
+  {
+    "query": "허먼밀러",
+    "last_searched": "2026-04-09T10:18:55.458729",
+    "region_count": 495,
+    "found": 277,
+    "count": 2
+  },
+  {
+    "query": "모델y",
+    "last_searched": "2026-04-09T04:33:13.582592",
+    "region_count": 48,
+    "found": 66,
+    "count": 1
+  },
+  {
+    "query": "맥북",
+    "last_searched": "2026-04-09T04:09:17.734124",
+    "region_count": 21,
+    "found": 114,
+    "count": 2
+  },
+  {
+    "query": "mini pc",
+    "last_searched": "2026-04-09T03:25:20.547973",
+    "region_count": 48,
+    "found": 53,
+    "count": 3
+  },
+  {
+    "query": "테스트",
+    "last_searched": "2026-04-09T01:34:17.862218",
+    "region_count": 3,
+    "found": 92,
+    "count": 1
+  }
+]
