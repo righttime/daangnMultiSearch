@@ -63,11 +63,17 @@ def add_history(query: str, region_count: int, found: int):
     })
     save_history(history)
 
-def fetch_page(url: str) -> str:
-    resp = http_requests.get(url, headers=HEADERS, timeout=10)
-    resp.raise_for_status()
-    resp.encoding = 'utf-8'
-    return resp.text
+def fetch_page(url: str, max_retries: int = 3) -> str:
+    for attempt in range(max_retries):
+        resp = http_requests.get(url, headers=HEADERS, timeout=10)
+        if resp.status_code == 429:
+            wait = 2 * (attempt + 1)  # 2s, 4s, 6s
+            time.sleep(wait)
+            continue
+        resp.raise_for_status()
+        resp.encoding = 'utf-8'
+        return resp.text
+    raise Exception(f"429 Too Many Requests after {max_retries} retries")
 
 def parse_items(html: str) -> list:
     items = []
